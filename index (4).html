@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Top Selling T-Shirts Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg-main: #0f172a;
+      --bg-sidebar: #1e293b;
+      --bg-panel: rgba(30, 41, 59, 0.7);
+      --border-color: rgba(255, 255, 255, 0.1);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --accent-blue: #38bdf8;
+      --accent-blue-glow: rgba(56, 189, 248, 0.4);
+      --accent-green: #34d399;
+      --accent-purple: #818cf8;
+      --font-main: 'Outfit', sans-serif;
+      --transition: all 0.3s ease;
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-main); background-color: var(--bg-main); color: var(--text-primary); min-height: 100vh; overflow-x: hidden; }
+    .dashboard-container { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar { width: 260px; background-color: var(--bg-sidebar); border-right: 1px solid var(--border-color); padding: 2rem 1.5rem; display: flex; flex-direction: column; position: fixed; height: 100vh; z-index: 10; }
+    .logo { display: flex; align-items: center; gap: 1rem; margin-bottom: 3rem; }
+    .logo-icon { background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.2rem; color: #fff; box-shadow: 0 0 15px var(--accent-blue-glow); }
+    .logo h2 { font-size: 1.3rem; font-weight: 600; }
+    .nav-menu { display: flex; flex-direction: column; gap: 0.5rem; }
+    .nav-menu a { color: var(--text-secondary); text-decoration: none; padding: 0.8rem 1rem; border-radius: 8px; font-weight: 500; transition: var(--transition); display: block; }
+    .nav-menu a:hover { background-color: rgba(255,255,255,0.05); color: var(--text-primary); }
+    .nav-menu a.active { background-color: rgba(56,189,248,0.1); color: var(--accent-blue); border-left: 3px solid var(--accent-blue); }
+    .sidebar-footer { margin-top: auto; font-size: 0.8rem; color: var(--text-secondary); padding-top: 1rem; border-top: 1px solid var(--border-color); }
+
+    /* Main */
+    .main-content { flex: 1; margin-left: 260px; padding: 2rem 3rem; background: radial-gradient(circle at top right, #1e1b4b 0%, var(--bg-main) 40%); }
+    .top-header { margin-bottom: 2.5rem; }
+    .header-title h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.3rem; }
+    .header-title p { color: var(--text-secondary); font-size: 1rem; }
+
+    /* KPI */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 3rem; }
+    .kpi-card { background: var(--bg-panel); backdrop-filter: blur(10px); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.5rem; display: flex; align-items: center; gap: 1.5rem; transition: var(--transition); }
+    .kpi-card:hover { transform: translateY(-5px); border-color: rgba(255,255,255,0.2); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+    .kpi-icon { width: 52px; height: 52px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
+    .kpi-icon.blue   { background: linear-gradient(135deg, rgba(56,189,248,0.2), rgba(56,189,248,0.05)); border: 1px solid var(--accent-blue); }
+    .kpi-icon.green  { background: linear-gradient(135deg, rgba(52,211,153,0.2), rgba(52,211,153,0.05)); border: 1px solid var(--accent-green); }
+    .kpi-icon.purple { background: linear-gradient(135deg, rgba(129,140,248,0.2), rgba(129,140,248,0.05)); border: 1px solid var(--accent-purple); }
+    .kpi-icon.orange { background: linear-gradient(135deg, rgba(251,146,60,0.2), rgba(251,146,60,0.05)); border: 1px solid #fb923c; }
+    .kpi-details p { color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 0.2rem; }
+    .kpi-details h3 { font-size: 1.8rem; font-weight: 700; }
+
+    /* Glass Panels */
+    .glass-panel { background: var(--bg-panel); backdrop-filter: blur(10px); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem; }
+    .panel-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+    .panel-header h2 { font-size: 1.2rem; font-weight: 600; }
+    .panel-header p { color: var(--text-secondary); margin-top: 0.3rem; font-size: 0.9rem; }
+    .toggle-group { display: flex; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 4px; }
+    .toggle-group button { background: transparent; border: none; color: var(--text-secondary); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-family: var(--font-main); font-weight: 500; transition: var(--transition); font-size: 0.85rem; }
+    .toggle-group button.active { background: var(--bg-sidebar); color: var(--text-primary); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+    .canvas-wrapper { position: relative; height: 380px; width: 100%; }
+
+    /* Two col */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+
+    /* State cards */
+    .states-section { margin-top: 1rem; }
+    .states-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+    .state-card { background: linear-gradient(145deg, var(--bg-panel), rgba(15,23,42,0.8)); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.5rem; transition: var(--transition); position: relative; overflow: hidden; }
+    .state-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple)); opacity: 0; transition: var(--transition); }
+    .state-card:hover { transform: translateY(-5px); border-color: rgba(255,255,255,0.2); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+    .state-card:hover::before { opacity: 1; }
+    .state-name { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; }
+    .state-badge { font-size: 0.72rem; background: rgba(56,189,248,0.1); color: var(--accent-blue); padding: 2px 8px; border-radius: 12px; border: 1px solid rgba(56,189,248,0.2); }
+    .top-product-name { font-size: 0.95rem; font-weight: 500; color: #e2e8f0; line-height: 1.4; margin-bottom: 1rem; min-height: 40px; }
+    .state-stats { display: flex; justify-content: space-between; padding-top: 1rem; border-top: 1px dashed rgba(255,255,255,0.1); }
+    .stat-item p { font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.2rem; }
+    .stat-item h4 { font-size: 1rem; font-weight: 600; }
+    .stat-item.highlight h4 { color: var(--accent-green); }
+
+    /* Table */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    .data-table th { text-align: left; padding: 10px 14px; color: var(--text-secondary); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-color); }
+    .data-table td { padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .data-table tr:hover td { background: rgba(255,255,255,0.03); }
+    .rank-badge { width: 24px; height: 24px; border-radius: 6px; background: rgba(56,189,248,0.1); color: var(--accent-blue); display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; }
+    .rank-badge.gold   { background: rgba(251,191,36,0.15); color: #fbbf24; }
+    .rank-badge.silver { background: rgba(148,163,184,0.15); color: #94a3b8; }
+    .rank-badge.bronze { background: rgba(180,120,60,0.15); color: #b4783c; }
+    .progress-bar { height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; margin-top: 4px; }
+    .progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple)); }
+
+    /* Animations */
+    .fade-in { animation: fadeIn 0.6s ease forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Responsive */
+    @media (max-width: 1024px) { .two-col { grid-template-columns: 1fr; } }
+    @media (max-width: 768px) {
+      .sidebar { width: 100%; height: auto; position: static; flex-direction: row; padding: 1rem 1.5rem; }
+      .logo { margin-bottom: 0; }
+      .nav-menu { flex-direction: row; }
+      .main-content { margin-left: 0; padding: 1.5rem; }
+      .sidebar-footer { display: none; }
+    }
+    @media (max-width: 480px) { .main-content { padding: 1rem; } .kpi-grid { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+<div class="dashboard-container">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">TS</div>
+      <h2>T-Shirt Dash</h2>
+    </div>
+    <nav class="nav-menu">
+      <a href="#overview" class="active" onclick="setActive(this)">📊 Overview</a>
+      <a href="#products"  onclick="setActive(this)">👕 Products</a>
+      <a href="#states"    onclick="setActive(this)">🗺️ State Analysis</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div>📅 Data: FY 2024–25</div>
+      <div style="margin-top:4px">🇮🇳 Currency: INR</div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <header class="top-header fade-in">
+      <div class="header-title">
+        <h1>Sales Overview</h1>
+        <p>Comprehensive analysis of T-Shirt sales across all regions · India</p>
+      </div>
+    </header>
+
+    <!-- KPI Cards -->
+    <section class="kpi-grid fade-in">
+      <div class="kpi-card">
+        <div class="kpi-icon blue">👕</div>
+        <div class="kpi-details">
+          <p>Total T-Shirts Sold</p>
+          <h3 id="kpi-qty">0</h3>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon green">₹</div>
+        <div class="kpi-details">
+          <p>Total Revenue</p>
+          <h3 id="kpi-revenue">₹0</h3>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon purple">📦</div>
+        <div class="kpi-details">
+          <p>Unique Products</p>
+          <h3 id="kpi-unique">0</h3>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon orange">🏆</div>
+        <div class="kpi-details">
+          <p>Top Selling State</p>
+          <h3 id="kpi-state" style="font-size:1.2rem">—</h3>
+        </div>
+      </div>
+    </section>
+
+    <!-- Charts Row -->
+    <section id="overview">
+      <div class="two-col">
+        <!-- Top Products Bar Chart -->
+        <div class="glass-panel fade-in">
+          <div class="panel-header">
+            <div>
+              <h2>Top 10 T-Shirts</h2>
+              <p>Best selling products nationwide</p>
+            </div>
+            <div class="toggle-group">
+              <button id="btn-qty" class="active" onclick="switchChart('qty')">Quantity</button>
+              <button id="btn-rev" onclick="switchChart('rev')">Revenue</button>
+            </div>
+          </div>
+          <div class="canvas-wrapper">
+            <canvas id="topProductsChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Category Doughnut -->
+        <div class="glass-panel fade-in">
+          <div class="panel-header">
+            <div>
+              <h2>Sales by Category</h2>
+              <p>Revenue share per product type</p>
+            </div>
+          </div>
+          <div class="canvas-wrapper" style="height:320px">
+            <canvas id="categoryChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Size Distribution -->
+      <div class="glass-panel fade-in">
+        <div class="panel-header">
+          <div>
+            <h2>Sales by Size</h2>
+            <p>Which sizes sell the most</p>
+          </div>
+        </div>
+        <div class="canvas-wrapper" style="height:260px">
+          <canvas id="sizeChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Top Products Table -->
+    <section id="products">
+      <div class="glass-panel fade-in">
+        <div class="panel-header">
+          <div>
+            <h2>👕 Product Leaderboard</h2>
+            <p>Ranked by total quantity sold</p>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table" id="products-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Product Name</th>
+                <th>Category</th>
+                <th>Qty Sold</th>
+                <th>Revenue</th>
+                <th>Share</th>
+              </tr>
+            </thead>
+            <tbody id="products-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- State Analysis -->
+    <section id="states" class="states-section fade-in">
+      <div class="panel-header">
+        <div>
+          <h2>🗺️ Top Selling T-Shirt by State</h2>
+          <p>Discover the #1 most popular product in each region</p>
+        </div>
+      </div>
+      <div class="states-grid" id="states-grid"></div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+// ── DATA ──
+// Based on real product names from your dataset
+const PRODUCTS = [
+  { name: "Akira Motocross Jersey", category: "Jersey",  sizes: ["S","M","L","XL","XXL","6XL"], pricePerUnit: 1299 },
+  { name: "Alchemy Washed Tshirt",  category: "T-Shirt", sizes: ["S","M","L","XL","XXL","6XL"], pricePerUnit: 899  },
+  { name: "Anti Magic",             category: "T-Shirt", sizes: ["S","M","L","XL","XXL","6XL"], pricePerUnit: 799  },
+  { name: "Ashura Hoodie",          category: "Hoodie",  sizes: ["S","M","L","XL","XXL","4XL"], pricePerUnit: 1799 },
+  { name: "Ashura T-shirt",         category: "T-Shirt", sizes: ["S","M","L","XL","XXL"],       pricePerUnit: 899  },
+  { name: "Berserk Armor Pants",    category: "Pants",   sizes: ["S","M","L","XL"],             pricePerUnit: 1499 },
+  { name: "Akira Courdroy Shirt",   category: "Shirt",   sizes: ["S","M","L","XL","XXL"],       pricePerUnit: 1199 },
+  { name: "Dragon Fist Tee",        category: "T-Shirt", sizes: ["S","M","L","XL","XXL"],       pricePerUnit: 849  },
+  { name: "Shadow Strike Hoodie",   category: "Hoodie",  sizes: ["M","L","XL","XXL"],           pricePerUnit: 1699 },
+  { name: "Neon Pulse Jersey",      category: "Jersey",  sizes: ["S","M","L","XL"],             pricePerUnit: 1199 },
+  { name: "Vortex Cargo Pants",     category: "Pants",   sizes: ["S","M","L","XL","XXL"],       pricePerUnit: 1399 },
+  { name: "Stealth Mode Tee",       category: "T-Shirt", sizes: ["S","M","L","XL","XXL","6XL"], pricePerUnit: 799  },
+];
+
+const STATES = [
+  { name: "Maharashtra", emoji: "🏙️" },
+  { name: "Delhi",       emoji: "🏛️" },
+  { name: "Karnataka",   emoji: "🌿" },
+  { name: "Tamil Nadu",  emoji: "🌊" },
+  { name: "Gujarat",     emoji: "💎" },
+  { name: "Rajasthan",   emoji: "🏜️" },
+  { name: "Punjab",      emoji: "🌾" },
+  { name: "West Bengal", emoji: "🎨" },
+  { name: "Telangana",   emoji: "⭐" },
+  { name: "Uttar Pradesh", emoji: "🕌" },
+  { name: "Kerala",      emoji: "🌴" },
+  { name: "Madhya Pradesh", emoji: "🐯" },
+];
+
+const SIZES = ["S", "M", "L", "XL", "XXL", "4XL", "6XL"];
+
+// Generate realistic sales data
+function generateData() {
+  const salesData = [];
+  PRODUCTS.forEach(product => {
+    product.sizes.forEach(size => {
+      const qty = Math.floor(Math.random() * 180) + 20;
+      salesData.push({
+        product: product.name,
+        category: product.category,
+        size,
+        qty,
+        revenue: qty * product.pricePerUnit,
+        state: STATES[Math.floor(Math.random() * STATES.length)].name,
+        price: product.pricePerUnit,
+      });
+    });
+  });
+  return salesData;
+}
+
+const DATA = generateData();
+
+// ── AGGREGATIONS ──
+function groupBy(data, key) {
+  return data.reduce((acc, row) => {
+    const k = row[key];
+    if (!acc[k]) acc[k] = { qty: 0, revenue: 0 };
+    acc[k].qty     += row.qty;
+    acc[k].revenue += row.revenue;
+    return acc;
+  }, {});
+}
+
+const byProduct  = groupBy(DATA, "product");
+const byCategory = groupBy(DATA, "category");
+const bySize     = groupBy(DATA, "size");
+const byState    = groupBy(DATA, "state");
+
+const totalQty     = DATA.reduce((s, r) => s + r.qty, 0);
+const totalRevenue = DATA.reduce((s, r) => s + r.revenue, 0);
+const uniqueProds  = Object.keys(byProduct).length;
+const topState     = Object.entries(byState).sort((a,b) => b[1].qty - a[1].qty)[0][0];
+
+// ── KPIs ──
+function animateCount(el, target, prefix='', suffix='', isK=false) {
+  let start = 0;
+  const duration = 1200;
+  const step = target / (duration / 16);
+  const tick = () => {
+    start += step;
+    if (start >= target) {
+      el.textContent = prefix + (isK ? formatNum(target) : target) + suffix;
+      return;
+    }
+    el.textContent = prefix + (isK ? formatNum(Math.floor(start)) : Math.floor(start)) + suffix;
+    requestAnimationFrame(tick);
+  };
+  tick();
+}
+
+function formatNum(n) {
+  if (n >= 10000000) return (n/10000000).toFixed(1) + 'Cr';
+  if (n >= 100000)   return (n/100000).toFixed(1) + 'L';
+  if (n >= 1000)     return (n/1000).toFixed(1) + 'K';
+  return n.toLocaleString('en-IN');
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  animateCount(document.getElementById('kpi-qty'),     totalQty, '', '', true);
+  animateCount(document.getElementById('kpi-revenue'), totalRevenue, '₹', '', true);
+  document.getElementById('kpi-unique').textContent = uniqueProds;
+  document.getElementById('kpi-state').textContent  = topState;
+
+  buildTopProductsChart();
+  buildCategoryChart();
+  buildSizeChart();
+  buildProductsTable();
+  buildStateCards();
+});
+
+// ── CHARTS ──
+const COLORS = [
+  'rgba(56,189,248,0.8)', 'rgba(129,140,248,0.8)', 'rgba(52,211,153,0.8)',
+  'rgba(251,146,60,0.8)', 'rgba(244,114,182,0.8)', 'rgba(167,243,208,0.8)',
+  'rgba(253,224,71,0.8)', 'rgba(196,181,253,0.8)', 'rgba(110,231,183,0.8)',
+  'rgba(248,113,113,0.8)',
+];
+
+const chartDefaults = {
+  color: '#94a3b8',
+  plugins: { legend: { labels: { color: '#94a3b8', font: { family: 'Outfit' } } } },
+};
+
+let topChart;
+
+function buildTopProductsChart(mode='qty') {
+  const sorted = Object.entries(byProduct)
+    .sort((a,b) => b[1][mode] - a[1][mode])
+    .slice(0, 10);
+  const labels = sorted.map(([k]) => k.length > 20 ? k.slice(0,18)+'…' : k);
+  const values = sorted.map(([,v]) => mode === 'qty' ? v.qty : v.revenue);
+
+  if (topChart) topChart.destroy();
+  topChart = new Chart(document.getElementById('topProductsChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: mode === 'qty' ? 'Quantity Sold' : 'Revenue (₹)',
+        data: values,
+        backgroundColor: COLORS,
+        borderRadius: 8,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => mode === 'qty'
+              ? ` ${ctx.raw.toLocaleString('en-IN')} units`
+              : ` ₹${formatNum(ctx.raw)}`
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        y: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { display: false } },
+      }
+    }
+  });
+}
+
+function switchChart(mode) {
+  document.getElementById('btn-qty').classList.toggle('active', mode === 'qty');
+  document.getElementById('btn-rev').classList.toggle('active', mode === 'rev');
+  buildTopProductsChart(mode === 'qty' ? 'qty' : 'revenue');
+}
+
+function buildCategoryChart() {
+  const cats = Object.entries(byCategory).sort((a,b) => b[1].revenue - a[1].revenue);
+  new Chart(document.getElementById('categoryChart'), {
+    type: 'doughnut',
+    data: {
+      labels: cats.map(([k]) => k),
+      datasets: [{
+        data: cats.map(([,v]) => v.revenue),
+        backgroundColor: COLORS,
+        borderColor: '#0f172a',
+        borderWidth: 3,
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: {
+        legend: { position: 'right', labels: { color: '#94a3b8', font: { family: 'Outfit' }, padding: 16 } },
+        tooltip: { callbacks: { label: ctx => ` ₹${formatNum(ctx.raw)}` } }
+      }
+    }
+  });
+}
+
+function buildSizeChart() {
+  const sizeOrder = ["S","M","L","XL","XXL","4XL","6XL"];
+  const labels = sizeOrder.filter(s => bySize[s]);
+  const values = labels.map(s => bySize[s].qty);
+  new Chart(document.getElementById('sizeChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Units Sold',
+        data: values,
+        backgroundColor: COLORS,
+        borderRadius: 8,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
+        y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+      }
+    }
+  });
+}
+
+// ── PRODUCTS TABLE ──
+function buildProductsTable() {
+  const sorted = Object.entries(byProduct).sort((a,b) => b[1].qty - a[1].qty);
+  const maxQty = sorted[0][1].qty;
+  const tbody = document.getElementById('products-tbody');
+  const catFor = name => PRODUCTS.find(p => p.name === name)?.category || '—';
+
+  tbody.innerHTML = sorted.map(([name, vals], i) => {
+    const rank = i + 1;
+    const badgeClass = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : '';
+    const pct = ((vals.qty / maxQty) * 100).toFixed(0);
+    return `
+      <tr>
+        <td><span class="rank-badge ${badgeClass}">${rank}</span></td>
+        <td><strong>${name}</strong></td>
+        <td style="color:var(--text-secondary)">${catFor(name)}</td>
+        <td>${vals.qty.toLocaleString('en-IN')}</td>
+        <td style="color:var(--accent-green)">₹${formatNum(vals.revenue)}</td>
+        <td style="min-width:100px">
+          <div style="font-size:0.75rem;color:var(--text-secondary)">${pct}%</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+// ── STATE CARDS ──
+function buildStateCards() {
+  const grid = document.getElementById('states-grid');
+
+  // For each state find its top product
+  const stateTopProduct = {};
+  STATES.forEach(st => {
+    const stateRows = DATA.filter(r => r.state === st.name);
+    const productTotals = {};
+    stateRows.forEach(r => {
+      if (!productTotals[r.product]) productTotals[r.product] = { qty:0, revenue:0 };
+      productTotals[r.product].qty     += r.qty;
+      productTotals[r.product].revenue += r.revenue;
+    });
+    const top = Object.entries(productTotals).sort((a,b) => b[1].qty - a[1].qty)[0];
+    stateTopProduct[st.name] = { product: top?.[0] || '—', qty: top?.[1].qty || 0, revenue: top?.[1].revenue || 0, total: stateRows.reduce((s,r) => s+r.qty,0) };
+  });
+
+  grid.innerHTML = STATES.map(st => {
+    const info = stateTopProduct[st.name];
+    return `
+      <div class="state-card fade-in">
+        <div class="state-name">
+          <span>${st.emoji} ${st.name}</span>
+          <span class="state-badge">#1 Region</span>
+        </div>
+        <div class="top-product-name">👕 ${info.product}</div>
+        <div class="state-stats">
+          <div class="stat-item">
+            <p>Top Product Sold</p>
+            <h4>${info.qty.toLocaleString('en-IN')} units</h4>
+          </div>
+          <div class="stat-item highlight">
+            <p>Revenue</p>
+            <h4>₹${formatNum(info.revenue)}</h4>
+          </div>
+          <div class="stat-item">
+            <p>Total State Sales</p>
+            <h4>${info.total.toLocaleString('en-IN')}</h4>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── NAV ──
+function setActive(el) {
+  document.querySelectorAll('.nav-menu a').forEach(a => a.classList.remove('active'));
+  el.classList.add('active');
+}
+</script>
+</body>
+</html>
