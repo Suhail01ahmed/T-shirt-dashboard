@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top Selling T-Shirts Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar / Navigation -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">TS</div>
+                <h2>T-Shirt Dash</h2>
+            </div>
+            <nav class="nav-menu">
+                <a href="#overview" class="active"><i class="icon-dashboard"></i> Overview</a>
+                <a href="#states"><i class="icon-map"></i> State Analysis</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="header-title">
+                    <h1>Sales Overview</h1>
+                    <p>Comprehensive analysis of T-Shirt sales across all regions.</p>
+                </div>
+            </header>
+
+            <!-- KPI Cards -->
+            <section class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-icon blue"></div>
+                    <div class="kpi-details">
+                        <p>Total T-Shirts Sold</p>
+                        <h3 id="kpi-qty">0</h3>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon green"></div>
+                    <div class="kpi-details">
+                        <p>Total Revenue</p>
+                        <h3 id="kpi-revenue">₹0</h3>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon purple"></div>
+                    <div class="kpi-details">
+                        <p>Unique Products</p>
+                        <h3 id="kpi-unique">0</h3>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Charts Section -->
+            <section id="overview" class="chart-section fade-in">
+                <div class="chart-container glass-panel">
+                    <div class="panel-header">
+                        <h2>Top 10 Selling T-Shirts (Nationwide)</h2>
+                        <div class="toggle-group">
+                            <button id="btn-chart-qty" class="active">By Quantity</button>
+                            <button id="btn-chart-rev">By Revenue</button>
+                        </div>
+                    </div>
+                    <div class="canvas-wrapper">
+                        <canvas id="topProductsChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- States Breakdown -->
+            <section id="states" class="states-section fade-in">
+                <div class="panel-header">
+                    <h2>Top Selling T-Shirt by State</h2>
+                    <p>Discover the #1 most popular product in each region.</p>
+                </div>
+                <div class="states-grid" id="states-grid">
+                    <!-- State cards will be injected here via JS -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Data & Scripts -->
+    <script src="tshirt_data.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
